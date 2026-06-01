@@ -1,0 +1,752 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EchoVerse Room — Still Counts</title>
+  <style>
+    :root {
+      --bg: #07070b;
+      --panel: rgba(18, 18, 28, 0.78);
+      --panel2: rgba(255,255,255,0.055);
+      --text: #f4f2ec;
+      --muted: #aaa4b4;
+      --cyan: #00e5ff;
+      --magenta: #ff2bd6;
+      --amber: #ffbe5c;
+      --green: #8cffc1;
+      --danger: #ff6464;
+      --line: rgba(255,255,255,.13);
+      --shadow: 0 22px 90px rgba(0,0,0,.52);
+      --radius: 26px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 15% 12%, rgba(0,229,255,.25), transparent 26%),
+        radial-gradient(circle at 85% 18%, rgba(255,43,214,.20), transparent 30%),
+        radial-gradient(circle at 50% 100%, rgba(255,190,92,.12), transparent 35%),
+        linear-gradient(145deg, #050509, #0d0d17 45%, #07070b);
+      overflow-x: hidden;
+    }
+    body:before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: radial-gradient(circle at center, black, transparent 76%);
+    }
+    .wrap { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 50px; }
+    header {
+      display: flex; justify-content: space-between; gap: 18px; align-items: flex-start;
+      margin-bottom: 22px;
+    }
+    .brand { display: flex; gap: 14px; align-items: center; }
+    .sigil {
+      width: 56px; height: 56px; border-radius: 18px; display: grid; place-items: center;
+      background: linear-gradient(135deg, rgba(0,229,255,.18), rgba(255,43,214,.14));
+      border: 1px solid var(--line); box-shadow: var(--shadow);
+      font-weight: 900; letter-spacing: -4px; color: white;
+    }
+    h1 { margin: 0; font-size: clamp(2.1rem, 5vw, 4.8rem); line-height: .9; letter-spacing: -0.07em; }
+    .eyebrow { color: var(--cyan); font-weight: 800; letter-spacing: .18em; text-transform: uppercase; font-size: .78rem; }
+    .subtitle { color: var(--muted); max-width: 680px; line-height: 1.55; margin-top: 10px; }
+    .room-pill { border: 1px solid var(--line); border-radius: 999px; padding: 10px 14px; color: var(--muted); background: rgba(255,255,255,.05); white-space: nowrap; }
+    .grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(320px, .75fr); gap: 18px; }
+    .card {
+      border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel);
+      box-shadow: var(--shadow); backdrop-filter: blur(18px); overflow: hidden;
+    }
+    .main { padding: 22px; }
+    .visual-card { padding: 0; min-height: 360px; position: relative; }
+    .visual-head { padding: 18px 20px 0; display:flex; justify-content:space-between; align-items:center; gap:12px; }
+    .now { color: var(--muted); font-size: .88rem; }
+    .track-title { font-size: clamp(1.6rem, 3vw, 2.8rem); margin: 4px 0 2px; letter-spacing: -0.05em; }
+    .track-meta { color: var(--muted); line-height: 1.4; }
+    svg { display:block; width:100%; height: 270px; }
+    .controls { display: grid; gap: 14px; margin-top: 16px; }
+    audio { width: 100%; filter: drop-shadow(0 6px 18px rgba(0,0,0,.35)); }
+    .buttons { display: flex; flex-wrap: wrap; gap: 10px; }
+    button, a.btn {
+      appearance: none; border: 1px solid var(--line); color: var(--text); text-decoration: none;
+      background: rgba(255,255,255,.075); padding: 11px 14px; border-radius: 14px;
+      cursor: pointer; font-weight: 800; transition: .18s transform, .18s background, .18s border;
+    }
+    button:hover, a.btn:hover { transform: translateY(-1px); background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.24); }
+    .primary { background: linear-gradient(135deg, rgba(0,229,255,.22), rgba(255,43,214,.18)); }
+    .hiddenbtn { border-color: rgba(255,190,92,.35); color: #ffe2b4; }
+    .tracks { display: grid; gap: 10px; margin-top: 18px; }
+    .track {
+      border: 1px solid var(--line); border-radius: 18px; padding: 14px; background: var(--panel2);
+      display: flex; justify-content: space-between; gap: 12px; align-items: center;
+    }
+    .track.active { border-color: rgba(0,229,255,.55); box-shadow: inset 0 0 0 1px rgba(0,229,255,.18); }
+    .track.locked { opacity: .58; filter: grayscale(.25); }
+    .track strong { display: block; }
+    .track small { color: var(--muted); }
+    .eq { padding: 20px; }
+    .eq h2, .lyrics h2 { margin: 0 0 12px; letter-spacing: -0.04em; }
+    .eqrow { display: grid; grid-template-columns: 70px 1fr 46px; gap: 10px; align-items: center; margin: 12px 0; }
+    input[type=range] { width: 100%; accent-color: var(--cyan); }
+    .lyrics { margin-top: 18px; padding: 20px; }
+    .lyrics pre {
+      white-space: pre-wrap; margin: 0; color: #dfdbe8; line-height: 1.5; font-size: .94rem;
+      max-height: 420px; overflow: auto; padding: 16px; border-radius: 18px; background: rgba(0,0,0,.28);
+      border: 1px solid var(--line);
+    }
+    .note { color: var(--muted); font-size: .9rem; line-height: 1.45; }
+    .status { color: var(--green); font-weight: 800; }
+    .locknote { color: var(--amber); }
+    .badge { color: var(--cyan); border:1px solid rgba(0,229,255,.32); border-radius:999px; padding:6px 10px; background:rgba(0,229,255,.07); font-size:.78rem; font-weight:900; }
+    @media (max-width: 900px) {
+      header, .grid { grid-template-columns: 1fr; display: grid; }
+      .room-pill { white-space: normal; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <div class="brand">
+          <div class="sigil">/\</div>
+          <div>
+            <div class="eyebrow">EchoVerse Room</div>
+            <h1>Still Counts</h1>
+          </div>
+        </div>
+        <p class="subtitle">A private two-track room for unresolved relationship tension, endurance-ballad energy, and hidden-track confession logic. Drop this file beside an <code>audio</code> folder containing <code>StillCounts.mp3</code> and <code>Even.mp3</code>.</p>
+      </div>
+      <div class="room-pill">Room ID: <span class="status">EV-STILL-COUNTS</span></div>
+    </header>
+
+    <section class="grid">
+      <main class="card main">
+        <section class="card visual-card">
+          <div class="visual-head">
+            <div>
+              <div class="now">Now Playing</div>
+              <div class="track-title" id="trackTitle">StillCounts.mp3</div>
+              <div class="track-meta" id="trackMeta">82 BPM · SwampHop endurance ballad · D minor / A minor</div>
+            </div>
+            <span class="badge" id="hiddenBadge">MAIN TRACK</span>
+          </div>
+
+          <svg viewBox="0 0 900 270" aria-label="SVG audio visualizer">
+            <defs>
+              <linearGradient id="waveGrad" x1="0" x2="1">
+                <stop offset="0%" stop-color="#00e5ff"/>
+                <stop offset="50%" stop-color="#ff2bd6"/>
+                <stop offset="100%" stop-color="#ffbe5c"/>
+              </linearGradient>
+              <filter id="glow">
+                <feGaussianBlur stdDeviation="5" result="blur"/>
+                <feMerge>
+                  <feMergeNode in="blur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
+            <rect width="900" height="270" fill="rgba(0,0,0,.12)"/>
+            <g id="bars" filter="url(#glow)"></g>
+            <path id="wave" d="" fill="none" stroke="url(#waveGrad)" stroke-width="4" opacity=".95"/>
+            <text x="26" y="242" fill="rgba(255,255,255,.45)" font-size="15" font-weight="700">SVG SIGNAL VISUALIZER · REACTIVE MODE</text>
+          </svg>
+        </section>
+
+        <div class="controls">
+          <audio id="player" controls preload="metadata" crossorigin="anonymous">
+            <source id="audioSrc" src="./audio/StillCounts.mp3" type="audio/mpeg">
+          </audio>
+
+          <div class="buttons">
+            <button class="primary" id="playStill">Play StillCounts</button>
+            <button class="hiddenbtn" id="unlockEven">Unlock Hidden Song</button>
+            <a class="btn" id="downloadBtn" href="./audio/StillCounts.mp3" download>Download Current MP3</a>
+          </div>
+        </div>
+
+        <div class="tracks">
+          <div class="track active" id="stillRow">
+            <div><strong>StillCounts.mp3</strong><small>Open track · bruised endurance ballad</small></div>
+            <button data-track="still">Load</button>
+          </div>
+          <div class="track locked" id="evenRow">
+            <div><strong>Hidden: Even.mp3</strong><small id="evenSmall">Locked · objection/rebuttal collision track</small></div>
+            <button data-track="even" id="evenLoad" disabled>Locked</button>
+          </div>
+        </div>
+
+        <section class="card lyrics">
+          <h2>Lyrics / Room Notes</h2>
+          <pre id="lyrics">[Intro | low piano loop · room hum · soft static]
+Yeah
+Still here
+Still mean it
+Still payin’ for it
+
+[Verse 1 | restrained halftime drums · mellow sub · soft piano]
+We keep tryin’, but the tryin’ still costs
+Still cross that room, still carry that cross
+Still one wrong tone and the air gets thin
+Still one old wound and the night caves in
+Still you want words in the shape you trust
+Still I go quiet when the room gets rough
+Still you read distance where I’m holdin’ pain
+Still I hear pressure where you’re askin’ plain
+
+And I’d love to tell you we outgrew the drag
+That mercy came easy, that we dropped the bag
+But truth is smaller and harder than that
+We got better at moments, not better like that
+
+Some nights we touch somethin’ honest and clean
+Then wake right back up in unfinished scenes
+Still mean it, whatever that means
+Still two tired hearts in a loud machine
+
+[Pre-Chorus | faint harmony bed]
+And I don’t know if this is wisdom
+Or fear dressed up as faith
+I just know we keep on reachin’
+Anyway
+
+[Chorus | wider pads · gentle lift]
+We still reach, and it still costs
+Still cross that room through the static loss
+Still say “stay” when we should say “pause”
+Still touch the flame, act surprised by scars
+We still mean it, whatever that means
+Still wake up inside unfinished scenes
+Still don’t know if this is love or fear
+But we’re still here
+Yeah, we’re still here
+
+[Verse 2 | fuller bass · faint guitar shimmer]
+There are nights you see me clearer than I do
+There are nights I catch your fear before it breaks through
+There are nights this almost feels
+Like the thing we wanted was maybe somethin’ real
+
+Then the old script comes crawlin’ back
+Old weight, old names, old proof, old lack
+And we both know the road by feel
+How quick one bruise becomes the whole appeal
+
+I’m not sayin’ nothin’ good survived
+Wouldn’t still be here if nothin’ inside was alive
+But alive ain’t healed and close ain’t safe
+And love don’t always know its shape
+
+So we keep buildin’ on a bendin’ frame
+Keep callin’ it work, keep payin’ the same
+Keep hopin’ one day what we mean will land
+And maybe that hope is the blood in the hand
+
+[Pre-Chorus | a little bigger]
+And I don’t know if this is courage
+Or us afraid to quit
+I just know there’s somethin’ in us
+That won’t release its grip
+
+[Chorus | fuller emotional bloom]
+We still reach, and it still costs
+Still cross that room through the static loss
+Still say “stay” when we should say “pause”
+Still touch the flame, act surprised by scars
+We still mean it, whatever that means
+Still wake up inside unfinished scenes
+Still don’t know if this is love or fear
+But we’re still here
+Yeah, we’re still here
+
+[Bridge | beat thins · near-spoken]
+Not healed
+Not gone
+Not right
+Not wrong
+Not free
+Not trapped
+Not simple like that
+Just two people
+Still handin’ each other
+Water and fire
+At the same time
+
+[Breakdown | piano and room tone]
+Maybe stayin’ is wisdom
+Maybe stayin’ is fear
+Maybe it changes by the hour
+But we are still here
+
+[Final Chorus | widest but still restrained]
+We still reach, and it still costs
+Still cross that room through the static loss
+Still say “stay” when we should say “pause”
+Still touch the flame, act surprised by scars
+We still mean it, whatever that means
+Still wake up inside unfinished scenes
+Still don’t know if this is love or fear
+But we’re still here
+Yeah, we’re still here
+
+[Outro | piano decay · soft hum]
+Still tryin’
+Still tired
+Still tender
+Still scarred
+Still here</pre>
+        </section>
+      </main>
+
+      <aside>
+        <section class="card eq">
+          <h2>Basic EQ</h2>
+          <p class="note">Browser EQ requires playback to start once. Sliders are basic Web Audio filters: bass shelf, mid peaking, treble shelf, plus room gain.</p>
+          <div class="eqrow"><label>Bass</label><input id="bass" type="range" min="-12" max="12" value="0"><output id="bassOut">0</output></div>
+          <div class="eqrow"><label>Mids</label><input id="mids" type="range" min="-12" max="12" value="0"><output id="midsOut">0</output></div>
+          <div class="eqrow"><label>Treble</label><input id="treble" type="range" min="-12" max="12" value="0"><output id="trebleOut">0</output></div>
+          <div class="eqrow"><label>Room</label><input id="gain" type="range" min="40" max="125" value="95"><output id="gainOut">95</output></div>
+          <button id="resetEq">Reset EQ</button>
+        </section>
+
+        <section class="card eq" style="margin-top:18px">
+          <h2>Sonic Signature</h2>
+          <p class="note"><strong>StillCounts:</strong> 82 BPM halftime SwampHop endurance ballad. Haunted upright piano, warm sub bass with subtle wobble, restrained drums, faint guitar shimmer, room ambience, tape hiss, and a soft repeating “mm-mm” vocal ache behind the hook.</p>
+          <p class="note locknote"><strong>Hidden Track:</strong> 140 BPM halftime with restrained stomp-clap, pulsing sub-bass, gritty blues stabs, dual-vocal conflict, and emotional drift instead of explosion.</p>
+        </section>
+
+        <section class="card eq" style="margin-top:18px">
+          <h2>Install</h2>
+          <p class="note">Recommended folder layout:</p>
+          <pre class="note" style="white-space:pre-wrap;background:rgba(0,0,0,.25);padding:14px;border-radius:14px;border:1px solid var(--line)">echoverse_still_counts_room.html
+audio/
+  StillCounts.mp3
+  Even.mp3</pre>
+        </section>
+      </aside>
+    </section>
+  </div>
+
+<script>
+const tracks = {
+  still: {
+    title: "StillCounts.mp3",
+    meta: "82 BPM · SwampHop endurance ballad · D minor / A minor",
+    src: "./audio/StillCounts.mp3",
+    badge: "MAIN TRACK",
+    lyrics: `[Intro | low piano loop · room hum · soft static]
+Yeah
+Still here
+Still mean it
+Still payin’ for it
+
+[Verse 1 | restrained halftime drums · mellow sub · soft piano]
+We keep tryin’, but the tryin’ still costs
+Still cross that room, still carry that cross
+Still one wrong tone and the air gets thin
+Still one old wound and the night caves in
+Still you want words in the shape you trust
+Still I go quiet when the room gets rough
+Still you read distance where I’m holdin’ pain
+Still I hear pressure where you’re askin’ plain
+
+And I’d love to tell you we outgrew the drag
+That mercy came easy, that we dropped the bag
+But truth is smaller and harder than that
+We got better at moments, not better like that
+
+Some nights we touch somethin’ honest and clean
+Then wake right back up in unfinished scenes
+Still mean it, whatever that means
+Still two tired hearts in a loud machine
+
+[Pre-Chorus | faint harmony bed]
+And I don’t know if this is wisdom
+Or fear dressed up as faith
+I just know we keep on reachin’
+Anyway
+
+[Chorus | wider pads · gentle lift]
+We still reach, and it still costs
+Still cross that room through the static loss
+Still say “stay” when we should say “pause”
+Still touch the flame, act surprised by scars
+We still mean it, whatever that means
+Still wake up inside unfinished scenes
+Still don’t know if this is love or fear
+But we’re still here
+Yeah, we’re still here
+
+[Verse 2 | fuller bass · faint guitar shimmer]
+There are nights you see me clearer than I do
+There are nights I catch your fear before it breaks through
+There are nights this almost feels
+Like the thing we wanted was maybe somethin’ real
+
+Then the old script comes crawlin’ back
+Old weight, old names, old proof, old lack
+And we both know the road by feel
+How quick one bruise becomes the whole appeal
+
+I’m not sayin’ nothin’ good survived
+Wouldn’t still be here if nothin’ inside was alive
+But alive ain’t healed and close ain’t safe
+And love don’t always know its shape
+
+So we keep buildin’ on a bendin’ frame
+Keep callin’ it work, keep payin’ the same
+Keep hopin’ one day what we mean will land
+And maybe that hope is the blood in the hand
+
+[Pre-Chorus | a little bigger]
+And I don’t know if this is courage
+Or us afraid to quit
+I just know there’s somethin’ in us
+That won’t release its grip
+
+[Chorus | fuller emotional bloom]
+We still reach, and it still costs
+Still cross that room through the static loss
+Still say “stay” when we should say “pause”
+Still touch the flame, act surprised by scars
+We still mean it, whatever that means
+Still wake up inside unfinished scenes
+Still don’t know if this is love or fear
+But we’re still here
+Yeah, we’re still here
+
+[Bridge | beat thins · near-spoken]
+Not healed
+Not gone
+Not right
+Not wrong
+Not free
+Not trapped
+Not simple like that
+Just two people
+Still handin’ each other
+Water and fire
+At the same time
+
+[Breakdown | piano and room tone]
+Maybe stayin’ is wisdom
+Maybe stayin’ is fear
+Maybe it changes by the hour
+But we are still here
+
+[Final Chorus | widest but still restrained]
+We still reach, and it still costs
+Still cross that room through the static loss
+Still say “stay” when we should say “pause”
+Still touch the flame, act surprised by scars
+We still mean it, whatever that means
+Still wake up inside unfinished scenes
+Still don’t know if this is love or fear
+But we’re still here
+Yeah, we’re still here
+
+[Outro | piano decay · soft hum]
+Still tryin’
+Still tired
+Still tender
+Still scarred
+Still here`
+  },
+  even: {
+    title: "Even.mp3",
+    meta: "140 BPM halftime · objection/rebuttal collision · hidden track",
+    src: "./audio/Even.mp3",
+    badge: "HIDDEN TRACK",
+    lyrics: `[Hidden Track | Even (Say It Again)]
+
+[Intro | soft female vocal loop · filtered · hypnotic]
+I do everything you ask me to…
+I do everything you ask me to…
+
+[Verse 1 | HER VOICE · smooth, rational tone]
+I do everything you ask me to
+I give you space, I don’t push through
+I respect your thoughts, I let you breathe
+I don’t cross lines, I let you be
+
+You hold onto things from way back then
+That’s not fair to who I am right now
+If you’d just let go of what it was
+We’d probably be okay by now
+
+You say it’s still happening—but it’s not
+You just see it that way cuz you’re stuck
+I’m showing up, I’m trying here
+But you keep framing it as not enough
+
+[Undercurrent | YOU · low, almost whispered]
+Same shape… softer tone
+Still the same… still the same
+
+[Pre-Chorus | HER builds confidence]
+You call it patterns, I call it growth
+You call it damage, I call it old
+You say it’s current—I don’t agree
+It’s just resentment you won’t release
+
+[Chorus | SPLIT]
+HER:
+I do everything you ask me to
+So why am I still wrong to you?
+If we’re not even after all I do
+Then what am I supposed to prove?
+
+YOU:
+Even just means I stop calling it
+Even just means I live with it
+
+[Post | dual voices phasing]
+HER: Let it go… let it go…
+YOU: It’s still here… it’s still here…
+
+HER: Let it go… let it go…
+YOU: You just say it quieter…
+
+[Verse 2 | HER — cracks start showing]
+You say I only show up when it’s light
+That’s not true, that’s just your view
+I take interest in what you love
+I even tried to learn from you
+
+But then you go too deep, too long
+You turn it into something big
+Now I’m overwhelmed, now it’s too much
+Now I feel like I can’t win
+
+So yeah, I pull back sometimes
+Yeah, I need to breathe
+But that doesn’t mean I don’t care
+It just means you’re hard to read
+
+[Undercurrent | YOU]
+You leaned in just enough
+To say you did
+
+[Pre-Chorus 2 | HER defensive tone rising]
+You say I’m hypocritical
+But you don’t see your side
+You want me perfect in your world
+While you keep yours justified
+
+[Bridge | YOUR VOICE finally steps forward]
+You don’t want “even”
+You want it quiet
+
+You don’t want balance
+You want me to hide it
+
+You don’t want past gone
+You want it unnamed
+
+So it don’t count
+When it shows up the same
+
+[Breakdown | stomp-clap confrontation]
+HER: I do everything—
+YOU: That you’re okay doing
+
+HER: I show up—
+YOU: When it’s not consuming
+
+HER: I try—
+YOU: When it feels light
+
+HER: I care—
+YOU: Not in the hard part
+
+[Final Chorus | full collision]
+HER:
+I do everything you ask me to
+Why’s it never enough for you?
+
+YOU:
+Because “everything” ain’t everything
+If it disappears when it gets real
+
+HER:
+Then what am I supposed to do?!
+
+YOU:
+Stay… when it’s not about you
+
+[Outro | hollow loop]
+I do everything you ask me to…
+I do everything you ask me to…
+
+YOU:
+Only when it doesn’t cost you`
+  }
+};
+
+const player = document.getElementById("player");
+const audioSrc = document.getElementById("audioSrc");
+const trackTitle = document.getElementById("trackTitle");
+const trackMeta = document.getElementById("trackMeta");
+const hiddenBadge = document.getElementById("hiddenBadge");
+const downloadBtn = document.getElementById("downloadBtn");
+const lyrics = document.getElementById("lyrics");
+const stillRow = document.getElementById("stillRow");
+const evenRow = document.getElementById("evenRow");
+const evenLoad = document.getElementById("evenLoad");
+const evenSmall = document.getElementById("evenSmall");
+
+let audioCtx, source, analyser, bassFilter, midFilter, trebleFilter, gainNode, dataArray;
+let unlocked = false;
+let currentTrack = "still";
+
+function loadTrack(name, autoplay = false) {
+  if (name === "even" && !unlocked) return;
+  const t = tracks[name];
+  currentTrack = name;
+  audioSrc.src = t.src;
+  player.load();
+  trackTitle.textContent = t.title;
+  trackMeta.textContent = t.meta;
+  hiddenBadge.textContent = t.badge;
+  downloadBtn.href = t.src;
+  lyrics.textContent = t.lyrics;
+  stillRow.classList.toggle("active", name === "still");
+  evenRow.classList.toggle("active", name === "even");
+  if (autoplay) player.play().catch(() => {});
+}
+
+function unlockEven() {
+  unlocked = true;
+  evenRow.classList.remove("locked");
+  evenLoad.disabled = false;
+  evenLoad.textContent = "Load";
+  evenSmall.textContent = "Unlocked · objection/rebuttal collision track";
+  loadTrack("even", true);
+}
+
+document.getElementById("playStill").addEventListener("click", () => loadTrack("still", true));
+document.getElementById("unlockEven").addEventListener("click", unlockEven);
+document.querySelectorAll("[data-track]").forEach(btn => btn.addEventListener("click", e => loadTrack(e.target.dataset.track, true)));
+
+function setupAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  source = audioCtx.createMediaElementSource(player);
+  analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 128;
+  dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+  bassFilter = audioCtx.createBiquadFilter();
+  bassFilter.type = "lowshelf";
+  bassFilter.frequency.value = 160;
+
+  midFilter = audioCtx.createBiquadFilter();
+  midFilter.type = "peaking";
+  midFilter.frequency.value = 1100;
+  midFilter.Q.value = 1;
+
+  trebleFilter = audioCtx.createBiquadFilter();
+  trebleFilter.type = "highshelf";
+  trebleFilter.frequency.value = 4200;
+
+  gainNode = audioCtx.createGain();
+  gainNode.gain.value = 0.95;
+
+  source.connect(bassFilter);
+  bassFilter.connect(midFilter);
+  midFilter.connect(trebleFilter);
+  trebleFilter.connect(gainNode);
+  gainNode.connect(analyser);
+  analyser.connect(audioCtx.destination);
+}
+
+player.addEventListener("play", () => {
+  setupAudio();
+  if (audioCtx.state === "suspended") audioCtx.resume();
+});
+
+function bindRange(id, filter, prop = "gain") {
+  const el = document.getElementById(id);
+  const out = document.getElementById(id + "Out");
+  el.addEventListener("input", () => {
+    out.textContent = el.value;
+    if (!audioCtx) return;
+    if (id === "gain") gainNode.gain.value = Number(el.value) / 100;
+    else filter()[prop].value = Number(el.value);
+  });
+}
+bindRange("bass", () => bassFilter);
+bindRange("mids", () => midFilter);
+bindRange("treble", () => trebleFilter);
+bindRange("gain", () => gainNode);
+
+document.getElementById("resetEq").addEventListener("click", () => {
+  ["bass","mids","treble"].forEach(id => {
+    document.getElementById(id).value = 0;
+    document.getElementById(id+"Out").textContent = "0";
+  });
+  document.getElementById("gain").value = 95;
+  document.getElementById("gainOut").textContent = "95";
+  if (audioCtx) {
+    bassFilter.gain.value = 0; midFilter.gain.value = 0; trebleFilter.gain.value = 0; gainNode.gain.value = .95;
+  }
+});
+
+const barsG = document.getElementById("bars");
+const wave = document.getElementById("wave");
+const barCount = 44;
+const bars = [];
+for (let i = 0; i < barCount; i++) {
+  const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  rect.setAttribute("x", 30 + i * 19);
+  rect.setAttribute("y", 135);
+  rect.setAttribute("width", 9);
+  rect.setAttribute("height", 2);
+  rect.setAttribute("rx", 6);
+  rect.setAttribute("fill", "url(#waveGrad)");
+  rect.setAttribute("opacity", ".75");
+  barsG.appendChild(rect);
+  bars.push(rect);
+}
+
+function animate() {
+  let values = [];
+  if (analyser && dataArray) {
+    analyser.getByteFrequencyData(dataArray);
+    values = Array.from(dataArray);
+  } else {
+    const t = Date.now() / 600;
+    values = Array.from({length: barCount}, (_, i) => 32 + Math.sin(t + i * .55) * 22 + Math.sin(t * 1.7 + i) * 10);
+  }
+
+  bars.forEach((rect, i) => {
+    const v = values[i % values.length] || 8;
+    const h = Math.max(6, v * .74);
+    rect.setAttribute("y", 135 - h / 2);
+    rect.setAttribute("height", h);
+    rect.setAttribute("opacity", .36 + Math.min(.62, v / 255));
+  });
+
+  const pts = [];
+  for (let i = 0; i < 90; i++) {
+    const x = i * 10;
+    const base = 135;
+    const amp = (values[i % values.length] || 30) / 5.2;
+    const y = base + Math.sin(Date.now()/360 + i * .28) * amp + Math.cos(Date.now()/680 + i * .14) * amp * .42;
+    pts.push(`${i === 0 ? "M" : "L"} ${x} ${y.toFixed(2)}`);
+  }
+  wave.setAttribute("d", pts.join(" "));
+  requestAnimationFrame(animate);
+}
+animate();
+</script>
+</body>
+</html>
