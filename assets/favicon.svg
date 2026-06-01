@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <radialGradient id="g" cx="35%" cy="25%" r="75%">
+      <stop offset="0%" stop-color="#f6d8a8"/>
+      <stop offset="42%" stop-color="#d9a978"/>
+      <stop offset="100%" stop-color="#070605"/>
+    </radialGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="1.6" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="#070605"/>
+  <rect x="5" y="5" width="54" height="54" rx="13" fill="url(#g)" opacity=".22"/>
+  <path d="M11 42 C19 28, 25 28, 32 42 C39 56, 45 56, 53 42" fill="none" stroke="#d9a978" stroke-width="3.2" stroke-linecap="round" filter="url(#glow)"/>
+  <path d="M13 28 C22 18, 42 18, 51 28" fill="none" stroke="#f0c899" stroke-width="2" stroke-linecap="round" opacity=".75"/>
+  <text x="32" y="37" text-anchor="middle" font-family="Georgia, serif" font-size="19" font-weight="700" fill="#f5eadb" filter="url(#glow)">EV</text>
+  <circle cx="50" cy="17" r="2.1" fill="#f0c899" opacity=".9"/>
+</svg>
